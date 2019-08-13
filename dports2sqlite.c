@@ -51,7 +51,7 @@ char *copy_file_to_string(char * filename, char *buffer)
     fseek (f, 0, SEEK_END);
     length = ftell (f);
     fseek (f, 0, SEEK_SET);
-    buffer = malloc (length+1);
+    buffer = malloc (length + 1);
     if (buffer)
     {
         buffer[length] = '\0';
@@ -75,20 +75,24 @@ void process_description()
 void *process_port(void *args)
 {
     port_t *port = args;
+    char *buffer = NULL;
     DEBUG_LOG("Processing port:%s of cat:%s\n", port->name, port->cat);
-
-    //usleep(1000);
 
     char makefile[PATH_LEN]; 
     snprintf(makefile, PATH_LEN, "%s/%s/%s/%s", dports_dir, port->cat, port->dirname, "Makefile");
-    copy_file_to_string(makefile, port->makefile);
+    port->makefile = copy_file_to_string(makefile, buffer);
+    buffer = NULL;
+    //process_makefile();
 
     char pkgdescr[PATH_LEN]; 
     snprintf(pkgdescr, PATH_LEN, "%s/%s/%s/%s", dports_dir, port->cat, port->dirname, "pkg-descr");
-    copy_file_to_string(pkgdescr, port->pkg_descr);
+    port->pkg_descr = copy_file_to_string(pkgdescr, buffer);
+    // process_description();
     
-    free(port->makefile);
-    free(port->pkg_descr);
+    DEBUG_LOG("    - Makefile:[%15.15s]\n    - Descr:[%15.15s]\n", port->makefile, port->pkg_descr);
+    
+    if (port->makefile)  free(port->makefile);
+    if (port->pkg_descr) free(port->pkg_descr);
     free(port);
     return NULL;
 }
