@@ -37,22 +37,29 @@ typedef struct port {
     char *pkg_descr;
 } port_t;
 
-void copy_file_to_string(char * filename, char *buffer)
+char *copy_file_to_string(char * filename, char *buffer)
 {
-    long length;
+    size_t length;
+    size_t read_length;
     FILE * f = fopen (filename, "rb");
-    if (f)
+    if (!f)
     {
-        fseek (f, 0, SEEK_END);
-        length = ftell (f);
-        fseek (f, 0, SEEK_SET);
-        buffer = malloc (length);
-        if (buffer)
-        {
-            fread (buffer, 1, length, f);
-        }
-        fclose (f);
+        return NULL;
     }
+    fseek (f, 0, SEEK_END);
+    length = ftell (f);
+    fseek (f, 0, SEEK_SET);
+    buffer = malloc (length+1);
+    if (buffer)
+    {
+        buffer[length] = '\0';
+        read_length = fread (buffer, 1, length, f);
+        if (length != read_length) {
+            return NULL;
+        }
+    }
+    fclose (f);
+    return buffer;
 }
 
 void process_makefile()
