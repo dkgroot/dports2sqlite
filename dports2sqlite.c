@@ -33,7 +33,27 @@ typedef struct port {
     int cat_id;
     char name[NAME_LEN];
     char dirname[DIRNAME_LEN];
+    char *makefile;
+    char *pkg_descr;
 } port_t;
+
+void copy_file_to_string(char * filename, char *buffer)
+{
+    long length;
+    FILE * f = fopen (filename, "rb");
+    if (f)
+    {
+        fseek (f, 0, SEEK_END);
+        length = ftell (f);
+        fseek (f, 0, SEEK_SET);
+        buffer = malloc (length);
+        if (buffer)
+        {
+            fread (buffer, 1, length, f);
+        }
+        fclose (f);
+    }
+}
 
 void process_makefile()
 {
@@ -47,9 +67,19 @@ void *process_port(void *args)
 {
     port_t *port = args;
     printf("Processing port:%s of cat%s\n", port->name, port->cat->name);
+
+    //usleep(1000);
+
+    char makefile[PATH_LEN]; 
+    snprintf(makefile, PATH_LEN, "%s/%s/%s/%s", dports_dir, port->cat->dirname, port->dirname, "Makefile");
+    copy_file_to_string(makefile, port->makefile);
+
+    char pkgdescr[PATH_LEN]; 
+    snprintf(pkgdescr, PATH_LEN, "%s/%s/%s/%s", dports_dir, port->cat->dirname, port->dirname, "pkg-descr");
+    copy_file_to_string(pkgdescr, port->pkg_descr);
     
-    usleep(1000);
-    
+    free(port->makefile);
+    free(port->pkg_descr);
     free(port);
     return NULL;
 }
