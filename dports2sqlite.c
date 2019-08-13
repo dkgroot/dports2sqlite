@@ -15,6 +15,7 @@
 #define NAME_LEN 25
 #define DIRNAME_LEN 25
 #define PATH_LEN 255
+#define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
 
 // debug logging
 #if defined(DEBUG)
@@ -29,14 +30,52 @@ char *dports_dir = "/build/home/dkgroot/dports/";
 threadpool pool;
 sqlite3 *db;
 
+typedef void (*ParseCb)(void *dest, char *contents);
+
+typedef enum makefile_key {
+    PORTNAME,
+    PORTVERSION,
+    PORTREVISION,
+    CATEGORIES,
+    MAINTAINER,
+    COMMENT,
+    RUN_DEPENDS,
+    BUILD_DEPENDS,
+} makefile_key_t; 
+
+void parse_strval(void *dest, char *contents) {}
+void parse_categories(void *dest, char *contents) {}
+void parse_depends(void *dest, char *contents) {}
+
+struct process_makefile_cb {
+    makefile_key_t key;
+    char *keystr;
+    ParseCb parse_cb;
+} makefile_entries[] = {
+    {PORTNAME, "PORTNAME", parse_strval},
+    {PORTVERSION, "PORTVERSION", parse_strval},
+    {CATEGORIES, "CATEGORIES", parse_categories},
+    {COMMENT, "COMMENT", parse_strval},
+    {RUN_DEPENDS, "RUN_DEPENDS", parse_depends}, 
+    {BUILD_DEPENDS, "BUILD_DEPENDS", parse_depends}, 
+};
+
+typedef struct makefile {
+    char *contents;
+} makefile_t;
+
+typedef struct descr {
+    char *contents;
+} descr_t;
+
 typedef struct port {
     int id;
     char cat[NAME_LEN];
     int cat_id;
     char name[NAME_LEN];
     char dirname[DIRNAME_LEN];
-    char *makefile;
-    char *pkg_descr;
+    makefile_t makefile;
+    descr_t pkg_descr;
 } port_t;
 
 char *copy_file_to_string(char * filename, char *buffer)
@@ -66,6 +105,10 @@ char *copy_file_to_string(char * filename, char *buffer)
 
 void process_makefile()
 {
+    int i;
+    for (i = 0; i < ARRAY_LEN(makefile_entries); i++) {
+        
+    }
 }
 
 void process_description()
@@ -80,19 +123,19 @@ void *process_port(void *args)
 
     char makefile[PATH_LEN]; 
     snprintf(makefile, PATH_LEN, "%s/%s/%s/%s", dports_dir, port->cat, port->dirname, "Makefile");
-    port->makefile = copy_file_to_string(makefile, buffer);
+    port->makefile.contents = copy_file_to_string(makefile, buffer);
     buffer = NULL;
     //process_makefile();
 
     char pkgdescr[PATH_LEN]; 
     snprintf(pkgdescr, PATH_LEN, "%s/%s/%s/%s", dports_dir, port->cat, port->dirname, "pkg-descr");
-    port->pkg_descr = copy_file_to_string(pkgdescr, buffer);
+    port->pkg_descr.contents = copy_file_to_string(pkgdescr, buffer);
     // process_description();
     
-    DEBUG_LOG("    - Makefile:[%15.15s]\n    - Descr:[%15.15s]\n", port->makefile, port->pkg_descr);
+    DEBUG_LOG("    - Makefile:[%15.15s]\n    - Descr:[%15.15s]\n", port->makefile.contents, port->pkg_descr.contents);
     
-    if (port->makefile)  free(port->makefile);
-    if (port->pkg_descr) free(port->pkg_descr);
+    if (port->makefile.contents)  free(port->makefile.contents);
+    if (port->pkg_descr.contents) free(port->pkg_descr.contents);
     free(port);
     return NULL;
 }
@@ -220,10 +263,12 @@ int main(int argc, char** argv)
         fprintf(stderr, "Can't create threadpool\n");
         goto close_db;
     }
-    
-    process_dports();
 
-    thpool_wait(pool);
+    thpool_pause(pool);		// wait until all jobs are added
+    process_dports();
+    thpool_resume(pool);	// start processing jobs
+
+    thpool_wait(pool);		// wait until all jobs are processed
     thpool_destroy(pool);
 
 close_db:
