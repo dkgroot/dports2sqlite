@@ -7,6 +7,7 @@
 #include <stdarg.h>	// va_start, va_end
 //#include <sys/types.h>
 //#include <sys/stat.h>
+#include <sys/sysctl.h>
 
 #include "thpool.h"
 
@@ -23,7 +24,7 @@
 #endif
 
 // globals
-int num_threads = 4;
+int num_threads = 1;
 char *dports_dir = "/build/home/dkgroot/dports/";
 threadpool pool;
 sqlite3 *db;
@@ -192,6 +193,13 @@ int setup_sqlite()
 int main(int argc, char** argv)
 {
     DEBUG_LOG("Generating dport sqlite3 db\n");
+
+    int lvalue = 1;
+    size_t len = sizeof(lvalue);
+    if (sysctlbyname("hw.ncpu", &lvalue, &len, NULL, 0) != -1) {
+        num_threads = lvalue;
+    }
+    DEBUG_LOG("Using %d threads\n", num_threads);
 
     int rc;
     rc = sqlite3_open("index.db", &db);
