@@ -17,7 +17,7 @@
 
 // debug logging
 #if defined(DEBUG)
-#define DEBUG_LOG(...) fprintf(stdout, VA_ARGS)
+#define DEBUG_LOG(...) fprintf(stdout, __VA_ARGS__)
 #else
 #define DEBUG_LOG(...)
 #endif
@@ -28,15 +28,9 @@ char *dports_dir = "/build/home/dkgroot/dports/";
 threadpool pool;
 sqlite3 *db;
 
-typedef struct cat {
-    int id;
-    char name[NAME_LEN];
-    char dirname[DIRNAME_LEN];
-} cat_t;
-
 typedef struct port {
     int id;
-    cat_t *cat;
+    char cat[NAME_LEN];
     int cat_id;
     char name[NAME_LEN];
     char dirname[DIRNAME_LEN];
@@ -80,16 +74,16 @@ void process_description()
 void *process_port(void *args)
 {
     port_t *port = args;
-    DEBUG_LOG("Processing port:%s of cat%s\n", port->name, port->cat->name);
+    DEBUG_LOG("Processing port:%s of cat:%s\n", port->name, port->cat);
 
     //usleep(1000);
 
     char makefile[PATH_LEN]; 
-    snprintf(makefile, PATH_LEN, "%s/%s/%s/%s", dports_dir, port->cat->dirname, port->dirname, "Makefile");
+    snprintf(makefile, PATH_LEN, "%s/%s/%s/%s", dports_dir, port->cat, port->dirname, "Makefile");
     copy_file_to_string(makefile, port->makefile);
 
     char pkgdescr[PATH_LEN]; 
-    snprintf(pkgdescr, PATH_LEN, "%s/%s/%s/%s", dports_dir, port->cat->dirname, port->dirname, "pkg-descr");
+    snprintf(pkgdescr, PATH_LEN, "%s/%s/%s/%s", dports_dir, port->cat, port->dirname, "pkg-descr");
     copy_file_to_string(pkgdescr, port->pkg_descr);
     
     free(port->makefile);
@@ -118,17 +112,15 @@ int insert_into_db(const char *format, ...)
     return sqlite3_last_insert_rowid(db);
 }
 
-void process_cat(cat_t *cat)
+void process_cat(char *cat)
 {
     struct dirent *portdir = NULL;
-    DEBUG_LOG("- category: %s\n", cat->name);
-    int cat_id = insert_into_db("INSERT INTO Category(Name, DirName) VALUES('%s', '%s');", cat->dirname, cat->dirname);
+    DEBUG_LOG("- category: %s\n", cat);
+    int cat_id = insert_into_db("INSERT INTO Category(Name, DirName) VALUES('%s', '%s');", cat, cat);
     if (cat_id < 0) return;
-    cat->id = cat_id;
     
     char cat_dir_str[PATH_LEN]="";
-    strcat(cat_dir_str, dports_dir);
-    strcat(cat_dir_str, cat->dirname);
+    snprintf(cat_dir_str, PATH_LEN, "%s/%s/", dports_dir, cat);
 
     DIR *cat_dir = opendir(cat_dir_str);
     if (cat_dir) {
@@ -141,7 +133,7 @@ void process_cat(cat_t *cat)
                 port_t *port = calloc(1, sizeof(port_t));			// freed by process_port
                 if (port) {
                     port->id = port_id;
-                    port->cat = cat;
+                    strncpy(port->cat, cat, sizeof port->cat - 1);
                     port->cat_id = cat_id;
                     strncpy(port->name, portdir->d_name, sizeof port->name - 1);
                     strncpy(port->dirname, portdir->d_name, sizeof port->name - 1);
@@ -160,10 +152,7 @@ void process_dports()
     if (ports) {
         while((catdir = readdir(ports))){
             if (catdir->d_type == DT_DIR && catdir->d_name[0] != '.') {
-                cat_t *cat = calloc(1, sizeof(cat_t));				// freed auto at program exit
-                strncpy(cat->name, catdir->d_name, sizeof cat->name - 1);
-                strncpy(cat->dirname, catdir->d_name, sizeof cat->dirname - 1);
-                process_cat(cat);
+                process_cat(catdir->d_name);
             }
         }
         closedir(ports);
