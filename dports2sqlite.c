@@ -15,6 +15,13 @@
 #define DIRNAME_LEN 25
 #define PATH_LEN 255
 
+// debug logging
+#if defined(DEBUG)
+#define DEBUG_LOG(...) fprintf(stdout, VA_ARGS)
+#else
+#define DEBUG_LOG(...)
+#endif
+
 // globals
 int num_threads = 4;
 char *dports_dir = "/build/home/dkgroot/dports/";
@@ -73,7 +80,7 @@ void process_description()
 void *process_port(void *args)
 {
     port_t *port = args;
-    printf("Processing port:%s of cat%s\n", port->name, port->cat->name);
+    DEBUG_LOG("Processing port:%s of cat%s\n", port->name, port->cat->name);
 
     //usleep(1000);
 
@@ -114,7 +121,7 @@ int insert_into_db(const char *format, ...)
 void process_cat(cat_t *cat)
 {
     struct dirent *portdir = NULL;
-    printf ("- category: %s\n", cat->name);
+    DEBUG_LOG("- category: %s\n", cat->name);
     int cat_id = insert_into_db("INSERT INTO Category(Name, DirName) VALUES('%s', '%s');", cat->dirname, cat->dirname);
     if (cat_id < 0) return;
     cat->id = cat_id;
@@ -130,7 +137,7 @@ void process_cat(cat_t *cat)
             if (portdir->d_type == DT_DIR && portdir->d_name[0] != '.') {
                 int port_id = insert_into_db("INSERT INTO Port(PkgName, DirName, MaintainerId, CatId) VALUES('%s', '%s', 0, %d);", portdir->d_name, portdir->d_name, cat_id);
                 if (port_id < 0) return; 
-                //printf ("   - port: %s\n", portdir->d_name);
+                DEBUG_LOG("   - port: %s\n", portdir->d_name);
                 port_t *port = calloc(1, sizeof(port_t));			// freed by process_port
                 if (port) {
                     port->id = port_id;
@@ -195,7 +202,7 @@ int setup_sqlite()
 
 int main(int argc, char** argv)
 {
-    printf("Generating dport sqlite3 db\n");
+    DEBUG_LOG("Generating dport sqlite3 db\n");
 
     int rc;
     rc = sqlite3_open("index.db", &db);

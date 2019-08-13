@@ -14,6 +14,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#if defined(__DragonFly__)
+#include <machine/cpumask.h>
+typedef cpumask_t               cpu_set_t;
+#include <pthread_np.h>
+#endif
 #include <errno.h>
 #include <time.h>
 #if defined(__linux__)
@@ -325,6 +330,8 @@ static void* thread_do(struct thread* thread_p){
 	prctl(PR_SET_NAME, thread_name);
 #elif defined(__APPLE__) && defined(__MACH__)
 	pthread_setname_np(thread_name);
+#elif defined(__DragonFly__)
+	pthread_set_name_np(pthread_self(), thread_name);
 #else
 	err("thread_do(): pthread_setname_np is not supported on this system");
 #endif
