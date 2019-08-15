@@ -1,0 +1,40 @@
+.include <bsd.port.subdir.mk>
+TMPDIR=/tmp
+
+.PHONY:
+	@${MKDIR} -p TMPDIR/INDEXES
+	@${MKDIR} -p TMPDIR/IKIWIKI
+
+DESCR_SUBDIRS != cd $(PORTSDIR); for sub in *; do \
+                if ${TEST} -d $${sub}; then \
+                        for port in $${sub}/*;do \
+                                if ${TEST} -f $${port}/Makefile; then \
+                                        echo "$${port}.describe"; \
+                                fi; \
+                        done; \
+                fi \
+        done
+
+$(DESCR_SUBDIRS)::
+	@$(MAKE) -C ${@:S/.describe//} -B describe >$(OUTPUTDIR)/INDEX/${@:S/\//_/}.descr
+
+describe-recursive: $(DESCR_SUBDIRS)
+	@${MKDIR} -p $(TMPDIR)/INDEXES
+	@(for x in $(TMPDIR)/INDEXES/*.desc;do cat $$x; rm $$x;done) >/tmp/$(INDEXFILE).tmp
+	@$(MV) /tmp/INDEXES/$(INDEXFILE).tmp $(INDEXDIR)/$(INDEXFILE)
+	@$(RM) $(TMPDIR)/INDEXES/*; $(RMDIR) $(TMPDIR)/INDEXES
+
+IKIWIKI_SUBDIRS != cd $(PORTSDIR); for sub in *; do \
+                if ${TEST} -d $${sub}; then \
+                        for port in $${sub}/*;do \
+                                if ${TEST} -f $${port}/Makefile; then \
+                                        echo "$${port}.ikiwiki"; \
+                                fi; \
+                        done; \
+                fi \
+        done
+
+$(IKIWIKI_SUBDIRS)::
+	@$(MAKE) -C ${@:S/.ikiwiki//} -B ikiwiki >$(TMPDIR)/IKIWIKI/${@:S/\//_/}.wiki
+
+ikiwiki-recursive: $(IKIWIKI_SUBDIRS)

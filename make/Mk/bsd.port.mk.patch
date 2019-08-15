@@ -1,0 +1,10 @@
+--- Mk/bsd.port.mk	2019-07-08 15:23:38.000000000 +0000
++++ Mk/bsd.port.mk	2019-08-15 09:13:53.113061000 +0000
+@@ -1067,6 +1067,7 @@
+ .MAKE.EXPAND_VARIABLES= yes
+ 
+ .include "${PORTSDIR}/Mk/bsd.commands.mk"
++.include "${PORTSDIR}/Mk/bsd.ikiwiki.mk"
+ 
+ # Do not leak flavors to childs make
+ .MAKEOVERRIDES:=	${.MAKEOVERRIDES:NFLAVOR}
