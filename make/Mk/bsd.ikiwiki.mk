@@ -41,9 +41,9 @@ ikiwiki:
 	${ECHO_CMD} "* Version: ${PORTVERSION:Q}"; 					\
 	${ECHO_CMD} "* Revision: ${PORTREVISION:Q}"; 					\
 	${ECHO_CMD} "* Origin: ${PKGDIR:C/[^\/]+\/\.\.\///:C/[^\/]+\/\.\.\///:C/^.*\/([^\/]+\/[^\/]+)$/\\1/}";	\
-	${ECHO_CMD} -n "* Categories: "; 						\
+	${ECHO_CMD} "* Categories: "; 						\
 	for cat in $(CATEGORIES); do 							\
-		${ECHO_CMD} "* [[$${cat}|CATEGORIES#$${cat}]]"; 			\
+		${ECHO_CMD} "  - [[$${cat}|CATEGORIES#$${cat}]]"; 			\
 	done; 										\
 	${ECHO_CMD} "* Maintainer: [[${MAINTAINER:Q}|MAINTAINERS#${MAINTAINER:Q}]]";	\
 	if [ -f ${DESCR} ]; then 							\
