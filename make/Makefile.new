@@ -2,8 +2,8 @@
 TMPDIR=/tmp
 
 .PHONY:
-	@${MKDIR} -p TMPDIR/INDEXES
-	@${MKDIR} -p TMPDIR/IKIWIKI
+	@${MKDIR} -p $(TMPDIR)/INDEXES
+	@${MKDIR} -p $(TMPDIR)/IKIWIKI
 
 DESCR_SUBDIRS != cd $(PORTSDIR); for sub in *; do \
                 if ${TEST} -d $${sub}; then \
