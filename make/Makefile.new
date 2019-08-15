@@ -16,6 +16,7 @@ DESCR_SUBDIRS != cd $(PORTSDIR); for sub in *; do \
         done
 
 $(DESCR_SUBDIRS)::
+	@${MKDIR} -p $(TMPDIR)/INDEXES
 	@$(MAKE) -C ${@:S/.describe//} -B describe >$(OUTPUTDIR)/INDEX/${@:S/\//_/}.descr
 
 describe-recursive: $(DESCR_SUBDIRS)
@@ -35,6 +36,7 @@ IKIWIKI_SUBDIRS != cd $(PORTSDIR); for sub in *; do \
         done
 
 $(IKIWIKI_SUBDIRS)::
-	@$(MAKE) -C ${@:S/.ikiwiki//} -B ikiwiki >$(TMPDIR)/IKIWIKI/${@:S/\//_/}.wiki
+	@${MKDIR} -p $(TMPDIR)/IKIWIKI
+	@$(MAKE) -C ${@:S/.ikiwiki//} -B ikiwiki >$(TMPDIR)/IKIWIKI/${@:S/\//_/}
 
 ikiwiki-recursive: $(IKIWIKI_SUBDIRS)
