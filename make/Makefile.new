@@ -1,8 +1,8 @@
 .include <bsd.port.subdir.mk>
 
-RECURSIVE_TMPDIR=/tmp
-
-SUBDIRS!=(cd $(PORTSDIR); for sub in *; do \
+.if !target(recursive_helper)
+_RECURSIVE_TMPDIR=/tmp
+_ALL_PORTS!=(cd $(PORTSDIR); for sub in *; do \
                 if ${TEST} -d $${sub}; then \
                         for port in $${sub}/*;do \
                                 if ${TEST} -f $${port}/Makefile; then \
@@ -11,22 +11,30 @@ SUBDIRS!=(cd $(PORTSDIR); for sub in *; do \
                         done; \
                 fi \
         done)
+.endif
 
 #
 # describe-recursive:
 # generate /usr/dports/INDEX file by calling make describe recursively
 #
-.if !target(describe-recursive)
-describe-tmpdir:
-	@${MKDIR} -p $(RECURSIVE_TMPDIR)/INDEXES
+.if !target(index-recursive)
+_index-tmpdir:
+	@${MKDIR} -p $(_RECURSIVE_TMPDIR)/INDEXES
 
-$(SUBDIRS:S/.job/.describe/g):: describe-tmpdir
-	@$(MAKE) -C ${@:S/.describe//} -B describe >$(OUTPUTDIR)/INDEX/${@:S/\//_/}.descr
+$(_ALL_PORTS:S/.job/.index/g):: _index-tmpdir
+	#@${ECHO_CMD} "generating ${@:S/.ikiwiki//} description"
+	@$(MAKE) -C ${@:S/.index//} -B describe >$(_RECURSIVE_TMPDIR)/INDEXES/${@:S/\//_/}.descr
 
-describe-recursive: $(SUBDIRS:S/.job/.describe/g)
-	@(for x in $(RECURSIVE_TMPDIR)/INDEXES/*.desc;do cat $$x; rm $$x;done) >/tmp/$(INDEXFILE).tmp
+index-recursive: $(_ALL_PORTS:S/.job/.index/g)
+	# Combine results into INDEX file
+	@(for x in $(_RECURSIVE_TMPDIR)/INDEXES/*.desc;do cat $$x; rm $$x;done) >/tmp/$(INDEXFILE).tmp
 	@$(MV) /tmp/INDEXES/$(INDEXFILE).tmp $(INDEXDIR)/$(INDEXFILE)
-	@$(RM) $(RECURSIVE_TMPDIR)/INDEXES/*; $(RMDIR) $(RECURSIVE_TMPDIR)/INDEXES
+	@$(RM) $(_RECURSIVE_TMPDIR)/INDEXES/*; $(RMDIR) $(_RECURSIVE_TMPDIR)/INDEXES
+
+INDEX: index-recursive
+index: index-recursive
+INDEX.bz2: INDEX
+	bzip2 $(INDEXDIR)/$(INDEXFILE)
 .endif
 
 #
@@ -34,11 +42,12 @@ describe-recursive: $(SUBDIRS:S/.job/.describe/g)
 # generate port ikiwiki pages by calling make ikiwiki recursively
 #
 .if !target(ikiwiki-recursive)
-ikiwiki-tmpdir:
-	@${MKDIR} -p $(RECURSIVE_TMPDIR)/IKIWIKI
+_ikiwiki-tmpdir:
+	@${MKDIR} -p $(_RECURSIVE_TMPDIR)/IKIWIKI
 
-$(SUBDIRS:S/.job/.ikiwiki/g)::ikiwiki-tmpdir
-	@$(MAKE) -C ${@:S/.ikiwiki//} -B ikiwiki >$(RECURSIVE_TMPDIR)/IKIWIKI/${@:S/\//_/}
+$(_ALL_PORTS:S/.job/.ikiwiki/g):: _ikiwiki-tmpdir
+	#@${ECHO_CMD} "generating ${@:S/.ikiwiki//} ikiwike page"
+	@$(MAKE) -C ${@:S/.ikiwiki//} -B ikiwiki >$(_RECURSIVE_TMPDIR)/IKIWIKI/${@:S/\//_/}
 
-ikiwiki-recursive: $(SUBDIRS:S/.job/.ikiwiki/g)
+ikiwiki-recursive: $(_ALL_PORTS:S/.job/.ikiwiki/g)
 .endif
