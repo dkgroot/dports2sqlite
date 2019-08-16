@@ -1,5 +1,13 @@
 IKIWIKIFILE?=${PKGNAME}.iwiki
 
+# Copy showconfig from bsd.port.mk here !
+. if !target(ikiwiki-config) && (make(*config*) || (!empty(.MAKEFLAGS:M-V) && !empty(.MAKEFLAGS:M*_DESC)))
+.include "${PORTSDIR}/Mk/bsd.options.desc.mk"
+ikiwiki-config:
+	@${ECHO_MSG} "* Active Options: ${PORT_OPTIONS}"
+	@${ECHO_MSG} "* All Options: ${ALL_OPTIONS}"
+.endif # ikiwiki-config
+
 . if !target(ikiwiki)
 _EXTRACT_DEPENDS=${EXTRACT_DEPENDS:C/^[^ :]+:([^ :@]+)(@[^ :]+)?(:[^ :]+)?/\1/:O:u:C,(^[^/]),${PORTSDIR}/\1,}
 _PATCH_DEPENDS=${PATCH_DEPENDS:C/^[^ :]+:([^ :@]+)(@[^ :]+)?(:[^ :]+)?/\1/:O:u:C,(^[^/]),${PORTSDIR}/\1,}
@@ -21,6 +29,7 @@ PAGE_OUT=/dev/stdout
 .  endif
 
 HTMLIFY=${SED} -e 's/&/\&amp;/g' -e 's/>/\&gt;/g' -e 's/</\&lt;/g'
+
 
 .  if empty(FLAVORS) || defined(_DESCRIBE_WITH_FLAVOR)
 ikiwiki:
@@ -50,6 +59,7 @@ ikiwiki:
 		${ECHO_CMD} -n "* URL: ";						\
 		${AWK} '$$1 ~ /^WWW:/ {print $$2}' ${DESCR} | ${HEAD} -1;		\
 	fi;										\
+	$(MAKE) ikiwiki-config;								\
 	${ECHO_CMD} "* Comment: ${COMMENT:Q}"; 						\
 	) > ${PAGE_OUT}
 .  else # empty(FLAVORS)
