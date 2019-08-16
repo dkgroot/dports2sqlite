@@ -1,4 +1,5 @@
 .include <bsd.port.subdir.mk>
+
 RECURSIVE_TMPDIR=/tmp
 
 SUBDIRS!=(cd $(PORTSDIR); for sub in *; do \
@@ -16,8 +17,10 @@ SUBDIRS!=(cd $(PORTSDIR); for sub in *; do \
 # generate /usr/dports/INDEX file by calling make describe recursively
 #
 .if !target(describe-recursive)
-$(SUBDIRS:S/.job/.describe/g)::
+describe-tmpdir:
 	@${MKDIR} -p $(RECURSIVE_TMPDIR)/INDEXES
+
+$(SUBDIRS:S/.job/.describe/g):: describe-tmpdir
 	@$(MAKE) -C ${@:S/.describe//} -B describe >$(OUTPUTDIR)/INDEX/${@:S/\//_/}.descr
 
 describe-recursive: $(SUBDIRS:S/.job/.describe/g)
@@ -31,8 +34,10 @@ describe-recursive: $(SUBDIRS:S/.job/.describe/g)
 # generate port ikiwiki pages by calling make ikiwiki recursively
 #
 .if !target(ikiwiki-recursive)
-$(SUBDIRS:S/.job/.ikiwiki/g)::
+ikiwiki-tmpdir:
 	@${MKDIR} -p $(RECURSIVE_TMPDIR)/IKIWIKI
+
+$(SUBDIRS:S/.job/.ikiwiki/g)::ikiwiki-tmpdir
 	@$(MAKE) -C ${@:S/.ikiwiki//} -B ikiwiki >$(RECURSIVE_TMPDIR)/IKIWIKI/${@:S/\//_/}
 
 ikiwiki-recursive: $(SUBDIRS:S/.job/.ikiwiki/g)
