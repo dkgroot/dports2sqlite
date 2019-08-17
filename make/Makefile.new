@@ -21,14 +21,14 @@ _ALL_PORTS!=(cd $(PORTSDIR); for sub in *; do \
 _index-tmpdir:
 	@${MKDIR} -p $(_RECURSIVE_TMPDIR)/INDEXES
 
-$(_ALL_PORTS:S/.job/.index/g):: _index-tmpdir
+$(_ALL_PORTS:S/.job$/.index/g):: _index-tmpdir
 	#@${ECHO_CMD} "generating ${@:S/.ikiwiki//} description"
-	@$(MAKE) -C ${@:S/.index//} -B describe >$(_RECURSIVE_TMPDIR)/INDEXES/${@:S/\//_/}.descr
+	@$(MAKE) -C ${@:S/.index$//g} -B describe >$(_RECURSIVE_TMPDIR)/INDEXES/${@:S/\//_/}.descr
 
-index-recursive: $(_ALL_PORTS:S/.job/.index/g)
+index-recursive: $(_ALL_PORTS:S/.job$/.index/g)
 	# Combine results into INDEX file
-	@(for x in $(_RECURSIVE_TMPDIR)/INDEXES/*.desc;do cat $$x; rm $$x;done) >/tmp/$(INDEXFILE).tmp
-	@$(MV) /tmp/INDEXES/$(INDEXFILE).tmp $(INDEXDIR)/$(INDEXFILE)
+	@(for x in $(_RECURSIVE_TMPDIR)/INDEXES/*.descr;do cat $$x; rm $$x;done) >/tmp/$(INDEXFILE).tmp
+	@$(MV) /tmp/$(INDEXFILE).tmp $(INDEXDIR)/$(INDEXFILE)
 	@$(RM) $(_RECURSIVE_TMPDIR)/INDEXES/*; $(RMDIR) $(_RECURSIVE_TMPDIR)/INDEXES
 
 INDEX: index-recursive
@@ -45,9 +45,9 @@ INDEX.bz2: INDEX
 _ikiwiki-tmpdir:
 	@${MKDIR} -p $(_RECURSIVE_TMPDIR)/IKIWIKI
 
-$(_ALL_PORTS:S/.job/.ikiwiki/g):: _ikiwiki-tmpdir
+$(_ALL_PORTS:S/.job$/.ikiwiki/g):: _ikiwiki-tmpdir
 	#@${ECHO_CMD} "generating ${@:S/.ikiwiki//} ikiwike page"
-	@$(MAKE) -C ${@:S/.ikiwiki//} -B ikiwiki >$(_RECURSIVE_TMPDIR)/IKIWIKI/${@:S/\//_/}
+	@$(MAKE) -C ${@:S/.ikiwiki$//g} -B ikiwiki >$(_RECURSIVE_TMPDIR)/IKIWIKI/${@:S/\//_/}
 
-ikiwiki-recursive: $(_ALL_PORTS:S/.job/.ikiwiki/g)
+ikiwiki-recursive: $(_ALL_PORTS:S/.job$/.ikiwiki/g)
 .endif
